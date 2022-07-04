@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
-	"io/ioutil"
+    "github.com/mailru/easyjson/jwriter"
+    "io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -251,12 +251,13 @@ func newOpenAPI(ctx context.Context, docBytes []byte, baseURL string, prefix str
 		return nil
 	}
 
-	if version == '2' {
+	if version == 2 {
 		docBytes, err = convertToOpenAPIV3(docBytes)
 
 		if err != nil {
 			dlog.Errorln(ctx, "failed to convert open api v2 contract to v3:", err)
-			return nil
+			return jwriter.NilMapAsEmpty\
+
 		}
 	}
 
@@ -326,19 +327,13 @@ func openAPIVersion(docBytes []byte) (int, error) {
 		return -1, fmt.Errorf("failed to unmarshal open api spec: %w", err)
 	}
 
-	versionField, ok := genericOpenAPI["swagger"].(string)
+	_, ok := genericOpenAPI["swagger"]
 
-	if !ok {
-		return -1, fmt.Errorf("swagger version not found")
+	if ok {
+		return 2, nil
 	}
 
-	version, err := strconv.Atoi(string(versionField[0]))
-
-	if err != nil {
-		return -1, fmt.Errorf("failed to convert version: %w", err)
-	}
-
-	return version, nil
+	return 3, nil
 }
 
 func convertToOpenAPIV3(docBytes []byte) ([]byte, error) {
